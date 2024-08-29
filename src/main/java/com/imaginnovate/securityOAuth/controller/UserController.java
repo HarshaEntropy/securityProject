@@ -2,25 +2,16 @@ package com.imaginnovate.securityOAuth.controller;
 
 import com.imaginnovate.securityOAuth.Exceptions.InvalidUserIdentifierException;
 import com.imaginnovate.securityOAuth.Exceptions.UserNotFoundException;
+import com.imaginnovate.securityOAuth.annotation.OnlyRole;
 import com.imaginnovate.securityOAuth.common.APIResponse;
 import com.imaginnovate.securityOAuth.common.TestBody;
-import com.imaginnovate.securityOAuth.dto.UserCreationDTO;
 import com.imaginnovate.securityOAuth.dto.UserResponseDTO;
 import com.imaginnovate.securityOAuth.dto.UserUpdateDTO;
 import com.imaginnovate.securityOAuth.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Controller;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -38,6 +29,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
+    @OnlyRole(roles = "hasAuthority('ROLE_ADMIN','ROLE_DEVELOPER')")
     public ResponseEntity<APIResponse> getUserById(@PathVariable("id") Integer id) {
         try {
             return APIResponse.success(new UserResponseDTO(userService.getUserById(id)));

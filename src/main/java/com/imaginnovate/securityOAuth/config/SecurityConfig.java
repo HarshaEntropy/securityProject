@@ -89,11 +89,13 @@ public class SecurityConfig {
 				.csrf(AbstractHttpConfigurer::disable)
 				.cors(customizer -> customizer.configurationSource(corsConfigurationSource()))
 				.sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//				.exceptionHandling(c -> c.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+//				.exceptionHandling(c -> c.authenticationEntryPoint(unauthorizedHandler))  // Correctly use your custom handler
 				.authorizeHttpRequests(auth ->
 						auth.requestMatchers("/api/auth/**").permitAll()
 								.requestMatchers("/api/test/**").permitAll()
-								.anyRequest().authenticated()).exceptionHandling(httpSecurityExceptionHandlingConfigurer -> httpSecurityExceptionHandlingConfigurer.authenticationEntryPoint(this.unauthorizedHandler));
+								.anyRequest().authenticated());
+
+//				.exceptionHandling(httpSecurityExceptionHandlingConfigurer -> httpSecurityExceptionHandlingConfigurer.authenticationEntryPoint(this.unauthorizedHandler));
 
 		http.authenticationProvider(authenticationProvider());
 		http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);

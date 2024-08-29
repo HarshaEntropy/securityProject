@@ -2,44 +2,61 @@ package com.imaginnovate.securityOAuth.annotation;
 
 import com.imaginnovate.securityOAuth.Exceptions.CustomException;
 import com.imaginnovate.securityOAuth.common.AuthUtils;
+import com.imaginnovate.securityOAuth.entity.Authority;
 import com.imaginnovate.securityOAuth.entity.User;
-import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
-import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
-import org.springframework.web.servlet.HandlerMapping;
 
-import java.util.Map;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Aspect
 @Configuration
+@RequiredArgsConstructor
 public class OnlyRoleConfig {
 
+    private final AuthUtils authUtils;
 
-
-    private AuthUtils authUtils;
-    @Before("@annotation(OnlyRole) ")
-    public void beforeValidateOrganization(JoinPoint joinPoint) throws Throwable {
+    @Before("@annotation(onlyRole)")
+    public void beforeValidateRole(JoinPoint joinPoint, OnlyRole onlyRole) throws Throwable {
         try {
+            User user = authUtils.getLoggedInUser();
+            Set<String> userRoles = user.getAuthorities().stream()
+                    .map(Authority::getAuthority)
+                    .collect(Collectors.toSet());
 
-            User loggedInUser = authUtils.getLoggedInUser();
+            List<String> requiredRoles = getRoleList(onlyRole.roles());
 
-            if (loggedInUser.getAuthorities()){
-                return;
+            // Check if the user has any of the required roles
+            boolean hasRequiredRole = userRoles.stream()
+                    .anyMatch(requiredRoles::contains);
+
+            if (!hasRequiredRole) {
+                throw new CustomException("You don't have permission to perform this action",HttpStatus.FORBIDDEN);
             }
-
-            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-            Map<String, String> uriVariables = (Map<String, String>) request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
-            OnlyRole onlyRole =((MethodSignature) joinPoint.getSignature()).getMethod().getAnnotation(OnlyRole.class);
-            String roles = uriVariables.get(onlyRole.roles());
-
-        } catch (Exception e) {
+        } catch (CustomException e) {
+            // Re-throw CustomException to let it propagate to the global exception handler
+            throw e;
+        }catch (Exception  e) {
             throw new CustomException("You don't have permission to perform this action", HttpStatus.FORBIDDEN);
         }
+    }
+
+    private List<String> getRoleList(String rolesExpression) {
+        // Check if the roles expression uses the 'hasAuthority' format
+        if (rolesExpression.startsWith("hasAuthority(") && rolesExpression.endsWith(")")) {
+            // Extract the roles within the parentheses
+            String rolesSubstring = rolesExpression.substring("hasAuthority(".length(), rolesExpression.length() - 1);
+            // Remove single quotes and split by commas
+            return List.of(rolesSubstring.replace("'", "").split(","));
+        }
+
+        // Default case: split by commas directly
+        return List.of(rolesExpression.split(","));
     }
 }
