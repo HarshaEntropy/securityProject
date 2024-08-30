@@ -22,9 +22,12 @@ public class OnlyRoleConfig {
 
     private final AuthUtils authUtils;
 
-    @Before("@annotation(onlyRole)")
+//    @Before("@annotation(onlyRole)")
     public void beforeValidateRole(JoinPoint joinPoint, OnlyRole onlyRole) throws Throwable {
         try {
+            if (onlyRole.equals("All")) {
+                return;
+            }
             User user = authUtils.getLoggedInUser();
             Set<String> userRoles = user.getAuthorities().stream()
                     .map(Authority::getAuthority)

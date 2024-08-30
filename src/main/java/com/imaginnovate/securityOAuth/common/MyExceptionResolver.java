@@ -27,11 +27,11 @@ public class MyExceptionResolver implements HandlerExceptionResolver {
             response.setStatus(exception.getHttpStatus().value());
 
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 
             final Map<String, Object> body = new HashMap<>();
-            body.put("status", HttpServletResponse.SC_UNAUTHORIZED);
-            body.put("error", "Unauthorized");
+            body.put("status", HttpServletResponse.SC_FORBIDDEN);
+            body.put("error", "FORBIDDEN");
             body.put("message", exception.getMessage());
             body.put("path", request.getServletPath());
 
